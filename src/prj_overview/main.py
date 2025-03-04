@@ -29,12 +29,12 @@ def should_process(
 ) -> bool:
     """
     Decide whether the given file or directory should be processed based on patterns.
-    
+
     Pattern priority (highest to lowest):
     1. CLI exclude patterns (--exclude-patterns)
     2. .llmignore files (unless --no-llmignore is set)
     3. .gitignore files (if --use-gitignore flag is set)
-    
+
     Any file or folder inside a ".git" directory is always ignored.
     """
     try:
@@ -114,9 +114,7 @@ def generate_tree(
         )
         entries_count = len(entries)
         for index, entry in enumerate(entries):
-            if not should_process(
-                entry, exclude_patterns, ignore_specs, project_root
-            ):
+            if not should_process(entry, exclude_patterns, ignore_specs, project_root):
                 continue
             connector = "└──" if index == entries_count - 1 else "├──"
             if entry.is_dir():
@@ -155,9 +153,7 @@ def get_code_files(
             relative_parts = path.parts
         if ".git" in relative_parts:
             continue
-        if not should_process(
-            path, exclude_patterns, ignore_specs, project_root
-        ):
+        if not should_process(path, exclude_patterns, ignore_specs, project_root):
             continue
         if path.is_file():
             if path.name == "__init__.py" and path.stat().st_size == 0:
@@ -206,14 +202,20 @@ def create_markdown(
             )
             for rel_path, file_path in code_files:
                 md_file.write(f"### {rel_path}\n")
-                extension = file_path.suffix[1:] if file_path.suffix else ""
-                md_file.write(f"```{extension}\n")
+                extension = file_path.suffix[1:] if file_path.suffix else file_path.stem
+                # use 4 backticks if markdown file, to ensure a correct rendering of code blocks
+                # containing markdown code.
+                code_block_start = (
+                    f"````{extension}\n" if extension == "md" else f"```{extension}\n"
+                )
+                md_file.write(code_block_start)
                 try:
                     content = file_path.read_text(encoding="utf-8")
                 except UnicodeDecodeError:
                     content = "# [Binary file not displayed]\n"
                 md_file.write(f"{content}\n")
-                md_file.write("```\n\n")
+                code_block_end = "````\n\n" if extension == "md" else "```\n\n"
+                md_file.write(code_block_end)
 
 
 @app.command()
@@ -254,7 +256,7 @@ def main(
 ):
     """
     Convert folder structure and code files to Markdown with pattern filtering.
-    
+
     Pattern sources in order of precedence:
     1. --exclude-patterns (highest priority)
     2. .llmignore files (default, unless --no-llmignore is set)
@@ -278,7 +280,7 @@ def main(
 
     # Collect all ignore specifications in order of precedence
     ignore_specs = []
-    
+
     # Load .llmignore files (unless disabled)
     if not no_llmignore:
         llmignore_data = load_ignore_files(directory, ".llmignore")
@@ -287,7 +289,7 @@ def main(
             ignore_specs.extend(llmignore_data)
         else:
             logging.info("No .llmignore files found")
-    
+
     # Load .gitignore files (if enabled)
     if use_gitignore:
         gitignore_data = load_ignore_files(directory, ".gitignore")
@@ -297,9 +299,7 @@ def main(
         else:
             logging.info("No .gitignore files found")
 
-    create_markdown(
-        directory, output, exclude_patterns, ignore_specs, tree_only
-    )
+    create_markdown(directory, output, exclude_patterns, ignore_specs, tree_only)
     typer.echo(f"Markdown file '{output}' has been generated.")
 
 
