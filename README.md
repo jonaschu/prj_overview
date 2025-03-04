@@ -21,7 +21,7 @@ uv tool install prj_overview
 You can also install directly from the repository:
 
 ```bash
-uv tool install git+https://github.com/username/prj_overview.git
+uv tool install git+https://github.com/jonaschu/prj_overview.git
 ```
 
 Or from a local directory:
