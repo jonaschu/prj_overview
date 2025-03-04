@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "prj_overview"
+version = "0.1.0"
+description = "Generate a project overview in Markdown format"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT" }
+dependencies = [
+    "typer",
+    "pathspec",
+]
+
+[project.scripts]
+prj-overview = "prj_overview.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/prj_overview"]
